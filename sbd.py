@@ -11,8 +11,8 @@ TODO:
 """
 
 ## globals
-SVM_LEARN = '/u/dgillick/tools/svm_light/svm_learn'
-SVM_CLASSIFY = '/u/dgillick/tools/svm_light/svm_classify'
+SVM_LEARN = '/home/ubuntu/github/facts-sentence-encoder/svm_light/svm_learn'
+SVM_CLASSIFY = '/home/ubuntu/github/facts-sentence-encoder/svm_light/svm_classify'
 
 def unannotate(t):
     """
@@ -29,7 +29,7 @@ def clean(t):
     t = re.sub('[^a-zA-Z0-9,.;:<>\-\'\/?!$% ]', '', t)
     t = t.replace('--', ' ') # sometimes starts a sentence... trouble
     return t
-            
+
 def get_features(frag, model):
     """
     ... w1. (sb?) w2 ...
@@ -59,13 +59,13 @@ def get_features(frag, model):
     c2 = re.sub('(\-.+?)$', '', w2)
 
     feats = {}
-    
+
     feats['w1'] = c1
     feats['w2'] = c2
     feats['both'] = c1 + '_' + c2
 
     len1 = min(10, len(re.sub('\W', '', c1)))
-    
+
     if c1.replace('.','').isalpha():
         feats['w1length'] = str(len1)
         try: feats['w1abbr'] = str(int(math.log(1+model.non_abbrs[c1[:-1]])))
@@ -74,7 +74,7 @@ def get_features(frag, model):
     if c2.replace('.','').isalpha():
         feats['w2cap'] = str(c2[0].isupper())
         try: feats['w2lower'] = str(int(math.log(1+model.lower_words[c2.lower()])))
-        except: feats['w2lower'] = str(int(math.log(1)))        
+        except: feats['w2lower'] = str(int(math.log(1)))
         feats['w1w2upper'] = c1 + '_' + str(c2[0].isupper())
 
     return feats
@@ -83,19 +83,19 @@ def is_sbd_hyp(word):
     """
     todo: expand to ?!
     """
-    
+
     if not '.' in word: return False
     c = unannotate(word)
     if c.endswith('.'): return True
     if re.match('.*\.["\')\]]*$', c): return True
     return False
-        
+
 def get_data(files, expect_labels=True, tokenize=False, verbose=False, files_already_opened=False):
     """
     load text from files, returning an instance of the Doc class
     doc.frag is the first frag, and each points to the next
     """
-    
+
     if type(files) == type(''): files = [files]
     frag_list = None
     word_index = 0
@@ -137,7 +137,7 @@ def get_data(files, expect_labels=True, tokenize=False, verbose=False, files_alr
                     frag = Frag(' '.join(curr_words))
                     if not frag_list: frag_list = frag
                     else: prev.next = frag
-                    
+
                     ## get label; tokenize
                     if expect_labels: frag.label = int('<S>' in word)
                     if tokenize:
@@ -145,7 +145,7 @@ def get_data(files, expect_labels=True, tokenize=False, verbose=False, files_alr
                     else: tokens = frag.orig
                     tokens = re.sub('(<A>)|(<E>)|(<S>)', '', tokens)
                     frag.tokenized = tokens
-                    
+
                     frag_index += 1
                     prev = frag
                     curr_words = []
@@ -182,7 +182,7 @@ def get_text_data(text, expect_labels=True, tokenize=False, verbose=False):
     get text, returning an instance of the Doc class
     doc.frag is the first frag, and each points to the next
     """
-    
+
     frag_list = None
     word_index = 0
     frag_index = 0
@@ -213,7 +213,7 @@ def get_text_data(text, expect_labels=True, tokenize=False, verbose=False):
                 frag = Frag(' '.join(curr_words))
                 if not frag_list: frag_list = frag
                 else: prev.next = frag
-                
+
                 ## get label; tokenize
                 if expect_labels: frag.label = int('<S>' in word)
                 if tokenize:
@@ -221,11 +221,11 @@ def get_text_data(text, expect_labels=True, tokenize=False, verbose=False):
                 else: tokens = frag.orig
                 tokens = re.sub('(<A>)|(<E>)|(<S>)', '', tokens)
                 frag.tokenized = tokens
-                
+
                 frag_index += 1
                 prev = frag
                 curr_words = []
-                
+
             word_index += 1
 
     ## last frag
@@ -240,7 +240,7 @@ def get_text_data(text, expect_labels=True, tokenize=False, verbose=False):
     frag.tokenized = tokens
     frag.ends_seg = True
     frag_index += 1
-        
+
     if verbose: sys.stderr.write(' words [%d] sbd hyps [%d]\n' %(word_index, frag_index))
 
     ## create a Doc object to hold all this information
@@ -284,7 +284,7 @@ class Model:
         self.lower_words = sbd_util.load_pickle(self.path + 'lower_words')
         self.non_abbrs = sbd_util.load_pickle(self.path + 'non_abbrs')
 
-        
+
 class NB_Model(Model):
     """
     Naive Bayes model, with a few tweaks:
@@ -387,7 +387,7 @@ class SVM_Model(Model):
         fh = open(train_file, 'w')
         fh.write('\n'.join(lines) + '\n')
         fh.close()
-    
+
         ## train an svm model
         sys.stderr.write('running svm... ')
         options = '-c 1 -v 0'
@@ -424,7 +424,7 @@ class SVM_Model(Model):
         fh = open(test_file, 'w')
         fh.write('\n'.join(lines) + '\n')
         fh.close()
-    
+
         ## classify test data
         predfd, pred_file = tempfile.mkstemp()
         options = '-v 0'
@@ -446,12 +446,12 @@ class SVM_Model(Model):
         os.fdopen(testfd,'w').close()
         os.fdopen(predfd,'w').close()
         if verbose: sys.stderr.write('done!\n')
-        
+
 class Doc:
     """
     A Document points to the head of a Frag object
     """
-    
+
     def __init__(self, frag):
         self.frag = frag
 
@@ -465,7 +465,7 @@ class Doc:
         if verbose: sys.stderr.write('getting statistics... ')
         lower_words = sbd_util.Counter()
         non_abbrs = sbd_util.Counter()
-        
+
         frag = self.frag
         while frag:
             for word in frag.tokenized.split():
@@ -531,7 +531,7 @@ class Doc:
 
         error = 1 - (1.0 * correct / total)
         print 'correct [%d] total [%d] error [%1.4f]' %(correct, total, error)
-        
+
 class Frag:
     """
     A fragment of text that ends with a possible sentence boundary
@@ -549,7 +549,7 @@ class Frag:
         s = self.orig
         if self.ends_seg: s += ' <EOS> '
         return s
-    
+
 def build_model(files, options):
 
     ## create a Doc object from some labeled data
